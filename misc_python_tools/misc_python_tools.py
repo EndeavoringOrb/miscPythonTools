@@ -1,4 +1,6 @@
 from datetime import datetime
+import pkg_resources
+import subprocess
 import threading
 import atexit
 import time
@@ -95,29 +97,24 @@ def log_clear(numLines):
 
 
 def upgrade_all_packages():
-    import subprocess
-
-    # Get the list of installed packages using pip freeze
+    # Get the list of all installed packages
     print(f"Getting installed packages")
-    installed_packages = subprocess.check_output(["pip", "freeze"])
-    installed_packages = installed_packages.decode("utf-8").splitlines()
+    installed_packages = [pkg.key for pkg in pkg_resources.working_set]
+    for item in installed_packages:
+        print(f"  {item}")
+    print(f"Found {len(installed_packages):,} packages")
 
-    # Extract only the package names (ignoring version numbers)
-    package_names = [
-        pkg.split("==")[0] for pkg in installed_packages if not pkg.startswith("-e ")
-    ]
-
-    # Upgrade all packages using pip
+    # Upgrade each package
     print(f"Upgrading packages")
-    try:
-        subprocess.run(
-            ["python", "-m", "pip", "install", "--upgrade"] + package_names, check=True
-        )
-    except subprocess.CalledProcessError as e:
-        print(f"ERROR: {e}")
-        return
+    successful_upgrades = 0
+    for package in installed_packages:
+        try:
+            subprocess.run(["pip", "install", "--upgrade", package], check=True)
+        except subprocess.CalledProcessError as e:
+            continue
+        successful_upgrades += 1
 
-    print(f"{len(package_names):,} packages upgraded")
+    print(f"{successful_upgrades:,}/{len(installed_packages):,} packages upgraded")
 
 
 logger = Logger()
