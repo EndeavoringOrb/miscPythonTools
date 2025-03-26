@@ -18,6 +18,12 @@ class Logger:
         atexit.register(self.stop)
         self.start()
 
+    def flush(self):
+        if self.text:
+            sys.stdout.write(self.text)
+            sys.stdout.flush()
+            self.text = ""
+
     def write(self, text: str):
         with self.lock:
             self.text += text + "\n"
@@ -26,10 +32,7 @@ class Logger:
         while self.running:
             time.sleep(config["log_interval"])
             with self.lock:
-                if self.text:
-                    sys.stdout.write(self.text)
-                    sys.stdout.flush()
-                    self.text = ""
+                self.flush()
 
     def start(self):
         if config["log_interval"] is not None and not self.running:
@@ -41,6 +44,7 @@ class Logger:
         self.running = False
         if self.thread:
             self.thread.join()
+        self.flush()
 
 
 def clearLines(numLines):
