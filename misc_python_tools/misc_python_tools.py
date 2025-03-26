@@ -29,12 +29,12 @@ class Logger:
             sys.stdout.flush()
             self.text = ""
 
-    def write(self, text: str):
+    def write(self, text: str, end="\n"):
         if self.show_log_time:
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             text = f"[{current_time}] {text}"
         with self.lock:
-            self.text += text + "\n"
+            self.text += text + end
 
     def _run(self):
         while self.running:
@@ -102,7 +102,7 @@ def log_clear(numLines):
 
     print("\033[K", end="\r") # Clear current line
     """
-    logger.write("\033[A\033[K" * numLines)
+    logger.write("\033[A\033[K" * numLines, end="")
 
 
 def upgrade_all_packages():
