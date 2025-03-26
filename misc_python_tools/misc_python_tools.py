@@ -94,4 +94,30 @@ def log_clear(numLines):
     logger.write("\033[A\033[K" * numLines)
 
 
+def upgrade_all_packages():
+    import subprocess
+
+    # Get the list of installed packages using pip freeze
+    print(f"Getting installed packages")
+    installed_packages = subprocess.check_output(["pip", "freeze"])
+    installed_packages = installed_packages.decode("utf-8").splitlines()
+
+    # Extract only the package names (ignoring version numbers)
+    package_names = [
+        pkg.split("==")[0] for pkg in installed_packages if not pkg.startswith("-e ")
+    ]
+
+    # Upgrade all packages using pip
+    print(f"Upgrading packages")
+    try:
+        subprocess.run(
+            ["python", "-m", "pip", "install", "--upgrade"] + package_names, check=True
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"ERROR: {e}")
+        return
+
+    print(f"{len(package_names):,} packages upgraded")
+
+
 logger = Logger()
