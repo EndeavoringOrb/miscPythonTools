@@ -13,7 +13,7 @@ def clearLines(numLines):
     print("\033[K", end="\r") # Clear current line
     """
     for i in range(numLines):
-        sys.stdout.write("\033[A\033[K", end="\r")
+        sys.stdout.write("\033[A\033[K")
     sys.stdout.flush()
 
 
@@ -29,7 +29,7 @@ def log(text: str):
     if config["log_time"]:
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         text = f"[{current_time}] {text}"
-    sys.stdout.write(text + "\n", flush=True)
+    sys.stdout.write(text + "\n")
     sys.stdout.flush()
 
 
