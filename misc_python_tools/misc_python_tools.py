@@ -6,8 +6,6 @@ import atexit
 import time
 import sys
 
-config = {"log_time": False, "log_interval": None}
-
 
 class Logger:
     def __init__(self):
@@ -15,7 +13,14 @@ class Logger:
         self.lock = threading.Lock()
         self.running = False
         self.thread = None
+        self.log_interval = None
+        self.show_log_time = False
         atexit.register(self.stop)
+        self.start()
+
+    def set_log_interval(self, log_interval):
+        self.log_interval = log_interval
+        self.stop()
         self.start()
 
     def flush(self):
@@ -25,17 +30,20 @@ class Logger:
             self.text = ""
 
     def write(self, text: str):
+        if self.show_log_time:
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            text = f"[{current_time}] {text}"
         with self.lock:
             self.text += text + "\n"
 
     def _run(self):
         while self.running:
-            time.sleep(config["log_interval"])
+            time.sleep(self.log_interval)
             with self.lock:
                 self.flush()
 
     def start(self):
-        if config["log_interval"] is not None and not self.running:
+        if self.log_interval is not None and not self.running:
             self.running = True
             self.thread = threading.Thread(target=self._run, daemon=True)
             self.thread.start()
@@ -68,10 +76,7 @@ def color_text(r, g, b, text: str):
 
 
 def log(text: str):
-    if config["log_time"]:
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        text = f"[{current_time}] {text}"
-    logger.write(text + "\n")
+    logger.write(text)
 
 
 def log_bad(text: str):
