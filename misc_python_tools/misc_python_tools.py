@@ -13,7 +13,7 @@ class Logger:
         self.lock = threading.Lock()
         self.running = False
         self.thread = None
-        self.log_interval = None
+        self.log_interval = 0.5
         self.show_log_time = False
         atexit.register(self.stop)
         self.start()
