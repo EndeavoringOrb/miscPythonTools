@@ -1,7 +1,44 @@
 from datetime import datetime
+import threading
+import atexit
+import time
 import sys
 
-config = {"log_time": False}
+config = {"log_time": False, "log_interval": None}
+
+
+class Logger:
+    def __init__(self):
+        self.text = ""
+        self.lock = threading.Lock()
+        self.running = False
+        self.thread = None
+        atexit.register(self.stop)
+        self.start()
+
+    def write(self, text: str):
+        with self.lock:
+            self.text += text + "\n"
+
+    def _run(self):
+        while self.running:
+            time.sleep(config["log_interval"])
+            with self.lock:
+                if self.text:
+                    sys.stdout.write(self.text)
+                    sys.stdout.flush()
+                    self.text = ""
+
+    def start(self):
+        if config["log_interval"] is not None and not self.running:
+            self.running = True
+            self.thread = threading.Thread(target=self._run, daemon=True)
+            self.thread.start()
+
+    def stop(self):
+        self.running = False
+        if self.thread:
+            self.thread.join()
 
 
 def clearLines(numLines):
@@ -12,8 +49,7 @@ def clearLines(numLines):
 
     print("\033[K", end="\r") # Clear current line
     """
-    for i in range(numLines):
-        sys.stdout.write("\033[A\033[K")
+    sys.stdout.write("\033[A\033[K" * numLines)
     sys.stdout.flush()
 
 
@@ -29,8 +65,7 @@ def log(text: str):
     if config["log_time"]:
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         text = f"[{current_time}] {text}"
-    sys.stdout.write(text + "\n")
-    sys.stdout.flush()
+    logger.write(text + "\n")
 
 
 def log_bad(text: str):
@@ -46,3 +81,17 @@ def log_sys(text: str):
 def log_good(text: str):
     text = color_text(0, 255, 0, text)
     log(text)
+
+
+def log_clear(numLines):
+    """
+    Clears the last numLines lines
+
+    print("\033[A", end="\r") # Go up one line
+
+    print("\033[K", end="\r") # Clear current line
+    """
+    logger.write("\033[A\033[K" * numLines)
+
+
+logger = Logger()
